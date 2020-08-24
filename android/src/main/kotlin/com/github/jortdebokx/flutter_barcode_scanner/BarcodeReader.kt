@@ -91,10 +91,6 @@ internal class BarcodeReader(width: Int, height: Int, private val context: Conte
 
     }
 
-    companion object {
-        private const val TAG = "cgl.fqs.QrReader"
-    }
-
     init {
         if (Build.VERSION.SDK_INT >= 21) {
             barCamera = BarcodeCamera(width, height, context, texture, BarcodeDetector(communicator, context, barcodeFormats))

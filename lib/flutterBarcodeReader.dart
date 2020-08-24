@@ -23,7 +23,7 @@ class FlutterBarcodeReader {
             .replaceAll('UNKNOWN', 'ALL_FORMATS'))
         .toList(growable: false);
 
-    channelReader.setQrCodeHandler(barcodeHandler);
+    channelReader.setBarcodeHandler(barcodeHandler);
     var details = await _channel.invokeMethod('start', {
       'targetHeight': height,
       'targetWidth': width,
@@ -41,7 +41,7 @@ class FlutterBarcodeReader {
   }
 
   static Future stop() {
-    channelReader.setQrCodeHandler(null);
+    channelReader.setBarcodeHandler(null);
     return _channel.invokeMethod('stop').catchError(print);
   }
 
@@ -60,8 +60,9 @@ class BarcodeChannelReader {
   BarcodeChannelReader(this.channel) {
     channel.setMethodCallHandler((MethodCall call) async {
       switch (call.method) {
-        case 'read':
-          if (qrCodeHandler != null) {
+        case 'barcodeRead':
+          print(call.arguments);
+          if (barcodeHandler != null) {
             assert(call.arguments is List<String>);
             String code = call.arguments[0];
             String formatString = call.arguments[1];
@@ -71,20 +72,20 @@ class BarcodeChannelReader {
               format = BarcodeFormat.UNKNOWN;
             }
             BarcodeResponse response = BarcodeResponse(code, format);
-            qrCodeHandler(response);
+            barcodeHandler(response);
           }
           break;
         default:
-          print("QrChannelHandler: unknown method call received at "
+          print("BarcodeHandler: unknown method call received at "
               "${call.method}");
       }
     });
   }
 
-  void setQrCodeHandler(BarcodeHandler qrch) {
-    this.qrCodeHandler = qrch;
+  void setBarcodeHandler(BarcodeHandler bchdl) {
+    this.barcodeHandler = bchdl;
   }
 
   MethodChannel channel;
-  BarcodeHandler qrCodeHandler;
+  BarcodeHandler barcodeHandler;
 }

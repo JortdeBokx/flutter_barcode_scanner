@@ -159,7 +159,7 @@ class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHa
   override fun barcodeRead(data: String, type: String) {
     val methodReturn: List<String> = listOf(data, type)
     Log.i("JB:barcodesc", "Item send: $data   $type")
-    channel.invokeMethod("qrRead", methodReturn)
+    channel.invokeMethod("barcodeRead", methodReturn)
   }
 
   private class ReadingInstance(reader: BarcodeReader, textureEntry: SurfaceTextureEntry, startResult: Result) {
