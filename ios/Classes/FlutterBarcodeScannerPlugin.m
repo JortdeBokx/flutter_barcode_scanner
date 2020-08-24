@@ -1,4 +1,23 @@
-#import "FlutterBarcodeScannerPlugin.h"
+
+@import AVFoundation;
+
+#import "FlutterQrBarScannerPlugin.h"
+#import <libkern/OSAtomic.h>
+#import "MLKit.h"
+
+@import MLKitBarcodeScanning;
+
+@interface NSError (FlutterError)
+@property(readonly, nonatomic) FlutterError *flutterError;
+@end
+
+@implementation NSError (FlutterError)
+- (FlutterError *)flutterError {
+    return [FlutterError errorWithCode:[NSString stringWithFormat:@"Error %d", (int)self.code]
+                               message:self.domain
+                               details:self.localizedDescription];
+}
+@end
 
 @implementation FlutterBarcodeScannerPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
