@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_barcode_scanner/';
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutterBarcodeScanner.dart';
 
 void main() {
   runApp(MyApp());
@@ -30,7 +33,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String _qrInfo = 'Scan a QR/Bar code';
   bool _camState = false;
 
-  _qrCallback(String code, String format) {
+  _qrCallback(String code, BarcodeFormat format) {
+    print("Scanned the following barcode: ");
     print(code);
     print(format);
   }
@@ -63,13 +67,13 @@ class _MyHomePageState extends State<MyHomePage> {
               child: SizedBox(
                 height: 1000,
                 width: 500,
-                child: QRBarScannerCamera(
+                child: BarcodeScanner(
                   onError: (context, error) => Text(
                     error.toString(),
                     style: TextStyle(color: Colors.red),
                   ),
-                  qrCodeCallback: (code, format) {
-                    _qrCallback(code, format);
+                  barcodeCallback: (BarcodeResponse response) {
+                    _qrCallback(response.code, response.format);
                   },
                 ),
               ),

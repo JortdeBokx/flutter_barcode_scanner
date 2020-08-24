@@ -4,6 +4,8 @@ import 'package:flutter_barcode_scanner/barcodeObjects.dart';
 import './barcodeObjects.dart';
 import './flutterBarcodeReader.dart';
 
+export './barcodeObjects.dart';
+
 final WidgetBuilder _defaultNotStartedBuilder =
     (context) => new Text("Loading Scanner Camera...");
 final WidgetBuilder _defaultOffscreenBuilder =
