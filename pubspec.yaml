@@ -6,11 +6,13 @@ homepage:
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
-  flutter: ">=1.17.0 <2.0.0"
+  flutter: ">=1.20.0 <2.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  native_device_orientation: ^0.3.0
+
 
 dev_dependencies:
   flutter_test:
@@ -25,6 +27,6 @@ flutter:
     platforms:
       android:
         package: com.github.jortdebokx.flutter_barcode_scanner
-        pluginClass: FlutterQrBarScannerPlugin
+        pluginClass: FlutterBarcodeScannerPlugin
       ios:
-        pluginClass: FlutterQrBarScannerPlugin
+        pluginClass: FlutterBarcodeScannerPlugin

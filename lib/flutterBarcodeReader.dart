@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_barcode_scanner/barcodeObjects.dart';
 
-class flutterBarcodeReader {
+class FlutterBarcodeReader {
   static const MethodChannel _channel =
       const MethodChannel('com.github.jortdebokx/flutter_barcode_scanner');
   static BarcodeChannelReader channelReader = BarcodeChannelReader(_channel);
@@ -23,7 +23,6 @@ class flutterBarcodeReader {
             .replaceAll('UNKNOWN', 'ALL_FORMATS'))
         .toList(growable: false);
 
-//TODO: finish this from this point onwards
     channelReader.setQrCodeHandler(barcodeHandler);
     var details = await _channel.invokeMethod('start', {
       'targetHeight': height,
