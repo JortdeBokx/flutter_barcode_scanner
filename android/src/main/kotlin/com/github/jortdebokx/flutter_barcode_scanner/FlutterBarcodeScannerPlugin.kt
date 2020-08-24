@@ -24,7 +24,7 @@ import java.io.IOException
 
 /** FlutterBarcodeScannerPlugin */
 class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHandler, PluginRegistry.RequestPermissionsResultListener, BarcodeReaderCallback, BarcodeReader.BarcodeReaderStartedCallback {
-  private val REQUEST_PERMISSION = 1
+  private val REQUEST_PERMISSION = 50
   private var lastHeartbeatTimeout: Int? = null
   private var waitingForPermissionResult = false
   private var permissionDenied = false
@@ -46,15 +46,15 @@ class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHa
     context = flutterPluginBinding.applicationContext
     textures = flutterPluginBinding.textureRegistry
     channel.setMethodCallHandler(this)
+
   }
-  //TODO: Make this look like the example kotlin plugin project
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
   }
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+    println(call.method)
     if(call.method=="start"){
-        println("Started")
         if (permissionDenied) {
           permissionDenied = false
           result.error("BarcodeReader_ERROR", "noPermission", null)
@@ -84,8 +84,9 @@ class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHa
             result.error(e.reason().name, "Error starting camera for reason: " + e.reason().name, null)
           } catch (e: NoPermissionException) {
             waitingForPermissionResult = true
-            ActivityCompat.requestPermissions(activity,arrayOf(Manifest.permission.CAMERA), REQUEST_PERMISSION)
-
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+                    PackageManager.PERMISSION_GRANTED) {
+              ActivityCompat.requestPermissions(activity,arrayOf(Manifest.permission.CAMERA), REQUEST_PERMISSION) }
           }
         }
       }
@@ -101,7 +102,6 @@ class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHa
       }
       else{
       result.notImplemented()
-
     }
   }
   private fun stopReader() {
@@ -170,6 +170,7 @@ class FlutterBarcodeScannerPlugin() : FlutterPlugin, ActivityAware, MethodCallHa
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     this.activity = binding.activity
+    binding.addRequestPermissionsResultListener(this)
   }
 
   override fun onDetachedFromActivityForConfigChanges() {

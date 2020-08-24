@@ -8,10 +8,12 @@ import android.hardware.camera2.*
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.CameraMetadata.*
 import android.hardware.camera2.params.StreamConfigurationMap
+import android.media.Image
 import android.media.ImageReader
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.Surface
+import java.lang.Exception
 
 
 class BarcodeCamera(width: Int, height: Int, private var context: Context, private var texture: SurfaceTexture, private var detector: BarcodeDetector) {
@@ -32,7 +34,7 @@ class BarcodeCamera(width: Int, height: Int, private var context: Context, priva
     private lateinit var previewSession: CameraCaptureSession
     private lateinit var jpegSizes: Array<Size>
     private var orientation = 0
-    private lateinit var cameraDevice: CameraDevice
+    private var cameraDevice: CameraDevice? = null
     private lateinit var cameraCharacteristics: CameraCharacteristics
 
     fun getWidth(): Int {
@@ -115,23 +117,22 @@ class BarcodeCamera(width: Int, height: Int, private var context: Context, priva
         val height: Int = jpegSize.height
         reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 5)
         list.add(reader.surface)
-        val imageAvailableListener: ImageReader.OnImageAvailableListener = ImageReader.OnImageAvailableListener() {
-            fun onImageAvailable(reader: ImageReader) {
-                try {
-                    reader.acquireLatestImage().use { image ->
-                        if (image == null) return
-                        detector.detect(image)
-                    }
-                } catch (t: Throwable) {
-                    t.printStackTrace()
-                }
+
+
+        val imageAvailableListener: ImageReader.OnImageAvailableListener = ImageReader.OnImageAvailableListener(){
+            try {
+                var image: Image = reader.acquireLatestImage() ?: return@OnImageAvailableListener
+                detector.detect(image)
+                image.close()
+            }catch (t: Throwable) {
+                t.printStackTrace()
             }
         }
         reader.setOnImageAvailableListener(imageAvailableListener, null)
         texture.setDefaultBufferSize(size.width, size.height)
         list.add(Surface(texture))
         try {
-            previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+            previewBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)!!
             previewBuilder.addTarget(list[0])
             previewBuilder.addTarget(list[1])
             val afMode = afMode(cameraCharacteristics)
@@ -144,12 +145,12 @@ class BarcodeCamera(width: Int, height: Int, private var context: Context, priva
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
                 }
             }
-        } catch (e: java.lang.Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             return
         }
         try {
-            cameraDevice.createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
+            cameraDevice?.createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
                 override fun onConfigured(session: CameraCaptureSession) {
                     previewSession = session
                     startPreview()
@@ -164,18 +165,22 @@ class BarcodeCamera(width: Int, height: Int, private var context: Context, priva
     }
 
     private fun startPreview() {
-        val listener: CaptureCallback = object : CaptureCallback() {}
+        val listener: CaptureCallback = object: CaptureCallback() {
+            override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+                super.onCaptureCompleted(session, request, result)
+            }
+        }
         if (cameraDevice == null) return
         try {
             previewSession.setRepeatingRequest(previewBuilder.build(), listener, null)
-        } catch (e: java.lang.Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     fun stop() {
         if (cameraDevice != null) {
-            cameraDevice.close()
+            cameraDevice?.close()
         }
         if (reader != null) {
             reader.close()

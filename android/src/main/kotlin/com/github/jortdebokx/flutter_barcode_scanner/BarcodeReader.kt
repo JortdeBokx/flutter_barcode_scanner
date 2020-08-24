@@ -51,9 +51,9 @@ internal class BarcodeReader(width: Int, height: Int, private val context: Conte
             heartbeat?.stop()
         }
         if (camera != null) {
-            camera!!.stop()
+            camera?.stop()
             // also stops detector
-            camera!!.release()
+            camera?.release()
             camera = null
         }
         barCamera.stop()

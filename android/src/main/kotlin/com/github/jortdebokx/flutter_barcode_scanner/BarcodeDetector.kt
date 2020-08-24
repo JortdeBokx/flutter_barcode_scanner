@@ -18,7 +18,7 @@ import com.google.android.gms.vision.barcode.BarcodeDetector as GBarcodeDetector
 
 
 class BarcodeDetector(private var communicator: BarcodeReaderCallback, context: Context, formats: Int) {
-    private var detector: Detector<Barcode>
+    private var detector: Detector<Barcode> = GBarcodeDetector.Builder(context.applicationContext).setBarcodeFormats(formats).build()
     private val imageToCheckLock: Lock = ReentrantLock()
     private val nextImageLock: Lock = ReentrantLock()
     private val isScheduled: AtomicBoolean = AtomicBoolean(false)
@@ -28,10 +28,6 @@ class BarcodeDetector(private var communicator: BarcodeReaderCallback, context: 
     private val nextImageSet: AtomicBoolean = AtomicBoolean(false)
     private val imageToCheck: BarcodeImage = BarcodeImage()
     private val nextImage: BarcodeImage = BarcodeImage()
-
-    init {
-        this.detector = GBarcodeDetector.Builder(context.applicationContext).setBarcodeFormats(formats).build()
-    }
 
     private fun maybeStartProcessing() {
         // start processing, only if scheduling is needed and
@@ -171,7 +167,7 @@ class BarcodeDetector(private var communicator: BarcodeReaderCallback, context: 
             return barDetector.detector.detect(builder.build())
         }
 
-        fun onPostExecute(detectedItems: SparseArray<Barcode?>?) {
+        override fun onPostExecute(detectedItems: SparseArray<Barcode>?) {
             val qrDetector: BarcodeDetector = barDetector.get() ?: return
             if (detectedItems != null) {
                 for (i in 0 until detectedItems.size()) {
