@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class SwiftFluttertestPlugin: NSObject, FlutterPlugin {
+public class SwiftFlutterBarcodeScannerPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "fluttertest", binaryMessenger: registrar.messenger())
-    let instance = SwiftFluttertestPlugin()
+    let channel = FlutterMethodChannel(name: "com.github.jortdebokx.flutter_barcode_scanner", binaryMessenger: registrar.messenger())
+    let instance = SwiftFlutterBarcodeScannerPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 
