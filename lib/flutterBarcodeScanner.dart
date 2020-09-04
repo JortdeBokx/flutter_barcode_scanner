@@ -17,7 +17,7 @@ final Function _defaultOnError = (BuildContext context, Object error) {
 
 class BarcodeScanner extends StatefulWidget {
   final BoxFit fit;
-  final Function(BarcodeResponse) barcodeCallback;
+  Function(BarcodeResponse) barcodeCallback;
   final Widget child;
   final WidgetBuilder notStartedBuilder;
   final WidgetBuilder offscreenBuilder;
@@ -80,7 +80,7 @@ class BarcodeScannerState extends State<BarcodeScanner>
     var previewDetails = await FlutterBarcodeReader.start(
       height: height.toInt(),
       width: width.toInt(),
-      barcodeHandler: widget.barcodeCallback,
+      barcodeHandler: this.widget.barcodeCallback,
       formats: widget.formats,
     );
     return previewDetails;

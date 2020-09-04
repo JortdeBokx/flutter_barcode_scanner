@@ -61,9 +61,7 @@ class BarcodeChannelReader {
     channel.setMethodCallHandler((MethodCall call) async {
       switch (call.method) {
         case 'barcodeRead':
-          print(call.arguments);
-          if (barcodeHandler != null) {
-            assert(call.arguments is List<String>);
+          if (this.barcodeHandler != null) {
             String code = call.arguments[0];
             String formatString = call.arguments[1];
             BarcodeFormat format = BarcodeFormat.values.firstWhere(
@@ -72,7 +70,9 @@ class BarcodeChannelReader {
               format = BarcodeFormat.UNKNOWN;
             }
             BarcodeResponse response = BarcodeResponse(code, format);
-            barcodeHandler(response);
+
+            //TODO: FIX this call not working
+            this.barcodeHandler(response);
           }
           break;
         default:
