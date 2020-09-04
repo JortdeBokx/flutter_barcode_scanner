@@ -1,39 +1,15 @@
-
-@import AVFoundation;
-
-#import "FlutterQrBarScannerPlugin.h"
-#import <libkern/OSAtomic.h>
-#import "MLKit.h"
-
-@import MLKitBarcodeScanning;
-
-@interface NSError (FlutterError)
-@property(readonly, nonatomic) FlutterError *flutterError;
-@end
-
-@implementation NSError (FlutterError)
-- (FlutterError *)flutterError {
-    return [FlutterError errorWithCode:[NSString stringWithFormat:@"Error %d", (int)self.code]
-                               message:self.domain
-                               details:self.localizedDescription];
-}
-@end
+#import "FlutterBarcodeScannerPlugin.h"
+#if __has_include(<flutter_barcode_scanner/flutter_barcode_scanner-Swift.h>)
+#import <flutter_barcode_scanner/flutter_barcode_scanner-Swift.h>
+#else
+// Support project import fallback if the generated compatibility header
+// is not copied when this plugin is created as a library.
+// https://forums.swift.org/t/swift-static-libraries-dont-copy-generated-objective-c-header/19816
+#import "flutter_barcode_scanner-Swift.h"
+#endif
 
 @implementation FlutterBarcodeScannerPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-  FlutterMethodChannel* channel = [FlutterMethodChannel
-      methodChannelWithName:@"flutter_barcode_scanner"
-            binaryMessenger:[registrar messenger]];
-  FlutterBarcodeScannerPlugin* instance = [[FlutterBarcodeScannerPlugin alloc] init];
-  [registrar addMethodCallDelegate:instance channel:channel];
+  [SwiftFlutterBarcodeScannerPlugin registerWithRegistrar:registrar];
 }
-
-- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  if ([@"getPlatformVersion" isEqualToString:call.method]) {
-    result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
-  } else {
-    result(FlutterMethodNotImplemented);
-  }
-}
-
 @end
