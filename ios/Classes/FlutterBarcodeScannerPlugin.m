@@ -1,6 +1,6 @@
-#import "FlutterBarcodeScanPlugin.h"
+#import "FlutterBarcodeScannerPlugin.h"
 #if __has_include(<flutter_barcode_scan/barcode_scan-Swift.h>)
-#import <flutter_barcode_scan/barcode_scan-Swift.h>
+#import <flutter_barcode_scanner/barcode_scan-Swift.h>
 #else
 // Support project import fallback if the generated compatibility header
 // is not copied when this plugin is created as a library.

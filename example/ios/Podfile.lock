@@ -2,23 +2,12 @@ PODS:
   - Flutter (1.0.0)
   - flutter_barcode_scanner (0.0.1):
     - Flutter
-    - GoogleMobileVision/BarcodeDetector
-  - GoogleMobileVision/BarcodeDetector (1.6.0):
-    - GoogleMobileVision/Detector (~> 1.6)
-  - GoogleMobileVision/Detector (1.6.0):
-    - GoogleToolboxForMac/Logger (~> 2.1)
-    - "GoogleToolboxForMac/NSData+zlib (~> 2.1)"
-    - GTMSessionFetcher/Core (~> 1.1)
-    - Protobuf (~> 3.1)
-  - GoogleToolboxForMac/Defines (2.2.2)
-  - GoogleToolboxForMac/Logger (2.2.2):
-    - GoogleToolboxForMac/Defines (= 2.2.2)
-  - "GoogleToolboxForMac/NSData+zlib (2.2.2)":
-    - GoogleToolboxForMac/Defines (= 2.2.2)
-  - GTMSessionFetcher/Core (1.4.0)
+    - MTBBarcodeScanner
+    - SwiftProtobuf
+  - MTBBarcodeScanner (5.0.11)
   - native_device_orientation (0.0.1):
     - Flutter
-  - Protobuf (3.13.0)
+  - SwiftProtobuf (1.12.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
@@ -27,10 +16,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - GoogleMobileVision
-    - GoogleToolboxForMac
-    - GTMSessionFetcher
-    - Protobuf
+    - MTBBarcodeScanner
+    - SwiftProtobuf
 
 EXTERNAL SOURCES:
   Flutter:
@@ -42,13 +29,11 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  flutter_barcode_scanner: 87d435b9ef42ee1c2dc8b53710469a6539f392c3
-  GoogleMobileVision: 31cfb4319fd0c03d80105680abd9eae9da5e3b47
-  GoogleToolboxForMac: 800648f8b3127618c1b59c7f97684427630c5ea3
-  GTMSessionFetcher: 6f5c8abbab8a9bce4bb3f057e317728ec6182b10
+  flutter_barcode_scanner: 272fe5e7db8bb4930705ca6ae3b6e7e88fb11c90
+  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   native_device_orientation: e24d00be281de72996640885d80e706142707660
-  Protobuf: 3dac39b34a08151c6d949560efe3f86134a3f748
+  SwiftProtobuf: 4ef85479c18ca85b5482b343df9c319c62bda699
 
 PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
 
-COCOAPODS: 1.10.0.beta.2
+COCOAPODS: 1.9.3
