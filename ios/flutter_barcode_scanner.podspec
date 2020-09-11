@@ -15,9 +15,9 @@ A flutter barcode scanner.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
+  s.dependency 'MTBBarcodeScanner'
+  s.dependency 'SwiftProtobuf'
   s.ios.deployment_target = '9.0'
-
-  s.dependency 'GoogleMobileVision/BarcodeDetector'
   s.platform = :ios, '9.0'
 
 
