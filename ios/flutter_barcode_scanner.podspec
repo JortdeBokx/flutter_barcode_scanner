@@ -15,10 +15,10 @@ A flutter barcode scanner.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '9.0'
 
   s.dependency 'GoogleMobileVision/BarcodeDetector'
-  s.platform = :ios, '10.0'
+  s.platform = :ios, '9.0'
 
 
   # Flutter.framework does not contain a i386 slice.
