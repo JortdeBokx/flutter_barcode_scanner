@@ -2,7 +2,9 @@
 
 #import "FlutterBarcodeScannerPlugin.h"
 #import <libkern/OSAtomic.h>
-#import "GoogleMobileVision/GoogleMobileVision.h"
+#import "MLKit.h"
+
+@import MLKitBarcodeScanning;
 
 @interface NSError (FlutterError)
 @property(readonly, nonatomic) FlutterError *flutterError;
@@ -26,9 +28,9 @@
 @property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
 @property(readonly, nonatomic) CMVideoDimensions previewSize;
 @property(readonly, nonatomic) dispatch_queue_t mainQueue;
+@property(readonly, nonatomic) MLKBarcodeScanner *barcodeScanner;
 
-@property(nonatomic, strong) GMVDetector *barcodeDetector;
-@property(nonatomic, copy) void (^onCodeAvailable)(NSString *, NSString *);
+@property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
 - (instancetype)initWithErrorRef:(NSError **)error;
 @end
@@ -39,12 +41,36 @@
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
-    
-    _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
-    
-    
+
+    // Define the options for a barcode detector.
+    // [START config_barcode]
+    MLKBarcodeFormat format = MLKBarcodeFormatAll;
+    MLKBarcodeScannerOptions *barcodeOptions =
+        [[MLKBarcodeScannerOptions alloc] initWithFormats:format];
+    // [END config_barcode]
+
+    // Create a barcode detector.
+    // [START init_barcode]
+    _barcodeScanner = [MLKBarcodeScanner barcodeScannerWithOptions:barcodeOptions];
+    // [END init_barcode]
+
+    if (@available(iOS 10.0, *)) {
+        _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+    } else {
+        for(AVCaptureDevice* device in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+            if (device.position == AVCaptureDevicePositionBack) {
+                _captureDevice = device;
+                break;
+            }
+        }
+
+        if (_captureDevice == nil) {
+            _captureDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+        }
+    }
+
     _mainQueue = dispatch_get_main_queue();
-    
+
     NSError *localError = nil;
     AVCaptureInput *input = [AVCaptureDeviceInput deviceInputWithDevice:_captureDevice error:&localError];
     if (localError) {
@@ -52,25 +78,23 @@
         return nil;
     }
     _previewSize = CMVideoFormatDescriptionGetDimensions([[_captureDevice activeFormat] formatDescription]);
-    
+
     AVCaptureVideoDataOutput *output = [AVCaptureVideoDataOutput new];
-    
+
     output.videoSettings =
     @{(NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
     [output setAlwaysDiscardsLateVideoFrames:YES];
     dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     [output setSampleBufferDelegate:self queue:queue];
-    
+
     AVCaptureConnection *connection =
     [AVCaptureConnection connectionWithInputPorts:input.ports output:output];
     connection.videoOrientation = AVCaptureVideoOrientationPortrait;
-    
+
     [_captureSession addInputWithNoConnections:input];
     [_captureSession addOutputWithNoConnections:output];
     [_captureSession addConnection:connection];
-    
-    _barcodeDetector = [GMVDetector detectorOfType:GMVDetectorTypeBarcode options:nil];
-    
+
     return self;
 }
 
@@ -101,9 +125,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     // create a new buffer in the form of a CGImage containing the image.
     // NOTE: it must be released manually!
     CGImageRef cgImageRef = [self cgImageRefFromCMSampleBufferRef:sampleBuffer];
-    
+
     CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-    
+
     CFRetain(newBuffer);
     CVPixelBufferRef old = _latestPixelBuffer;
     while (!OSAtomicCompareAndSwapPtrBarrier(old, newBuffer, (void **)&_latestPixelBuffer)) {
@@ -112,36 +136,63 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     if (old != nil) {
         CFRelease(old);
     }
-    
+
     dispatch_sync(_mainQueue, ^{
         self.onFrameAvailable();
     });
-    
-    ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
-    /// process the frame with GMV
-    AVCaptureDevicePosition devicePosition = AVCaptureDevicePositionBack;
-    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
-    // TODO: last known orientation?
-    GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
-    
-    NSDictionary *options = @{
-        GMVDetectorImageOrientation: @(orientation)
-    };
-    
-    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
-    NSArray<GMVBarcodeFeature *> *barcodes = [_barcodeDetector featuresInImage:image options:options];
-    image = nil;
-    CGImageRelease(cgImageRef);
 
-    if (barcodes.count > 0) {
-        GMVBarcodeFeature *barcode0 = barcodes[0];
-        NSString * value = [barcode0 rawValue];
-        NSString * type = [barcode0 type];
-        NSLog(@"Detected barcode: %@", value);
-        dispatch_async(_mainQueue, ^{
-            self->_onCodeAvailable(value, type);
-        });
-    }
+    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
+    MLKVisionImage *visionImage = [[MLKVisionImage alloc] initWithImage:image];
+
+    UIImageOrientation orientation = [self imageOrientationFromDeviceOrientation:UIDevice.currentDevice.orientation
+        cameraPosition:AVCaptureDevicePositionBack];
+
+    visionImage.orientation = orientation;
+    [self scanBarcodesOnDeviceInImage:visionImage];
+
+    CGImageRelease(cgImageRef);
+}
+
+- (void)scanBarcodesOnDeviceInImage:(MLKVisionImage *)image {
+  NSError *error;
+  NSArray<MLKBarcode *> *barcodes = [_barcodeScanner resultsInImage:image error:&error];
+
+  dispatch_async(_mainQueue, ^{
+      if (error != nil) {
+          NSLog(@"Error while detecting barcode: %@", error);
+          return;
+      }
+      if (barcodes.count > 0) {
+          MLKBarcode *barcode0 = barcodes[0];
+          NSString * value = [barcode0 rawValue];
+          NSLog(@"Detected barcode: %@", value);
+          _onCodeAvailable(value);
+      }
+  });
+}
+
+- (UIImageOrientation)
+  imageOrientationFromDeviceOrientation:(UIDeviceOrientation)deviceOrientation
+                         cameraPosition:(AVCaptureDevicePosition)cameraPosition {
+  switch (deviceOrientation) {
+    case UIDeviceOrientationPortrait:
+      return cameraPosition == AVCaptureDevicePositionFront ? UIImageOrientationLeftMirrored
+                                                            : UIImageOrientationRight;
+
+    case UIDeviceOrientationLandscapeLeft:
+      return cameraPosition == AVCaptureDevicePositionFront ? UIImageOrientationDownMirrored
+                                                            : UIImageOrientationUp;
+    case UIDeviceOrientationPortraitUpsideDown:
+      return cameraPosition == AVCaptureDevicePositionFront ? UIImageOrientationRightMirrored
+                                                            : UIImageOrientationLeft;
+    case UIDeviceOrientationLandscapeRight:
+      return cameraPosition == AVCaptureDevicePositionFront ? UIImageOrientationUpMirrored
+                                                            : UIImageOrientationDown;
+    case UIDeviceOrientationUnknown:
+    case UIDeviceOrientationFaceUp:
+    case UIDeviceOrientationFaceDown:
+      return UIImageOrientationUp;
+  }
 }
 
 - (void)heartBeat {
@@ -193,12 +244,12 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-    
+
     if ([@"start" isEqualToString:call.method]) {
         // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetHeight = call.arguments[@"targetHeight"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
-        
+
         if (targetHeight == nil || targetWidth == nil) {
             result([FlutterError errorWithCode:@"INVALID_ARGS"
                                        message: @"Missing a required argument"
@@ -227,7 +278,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)startWithCallback:(void (^)(int height, int width, int orientation, int64_t textureId))completedCallback orFailure:(void (^)(NSError *))failureCallback {
-    
+
     if (_reader) {
         failureCallback([NSError errorWithDomain:@"flutter_qr_bar_scanner" code:1 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"Reader already running.", nil)}]);
         return;
